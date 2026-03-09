@@ -194,16 +194,15 @@ def api_relatorio():
         vol_atual = float(resumo_atual['vol_total'])
         atuais = resumo_atual['total_eventos']
 
-       # 2. Indicadores do Período PASSADO (Comparação Mês a Mês)
+       # 2. Indicadores do Período PASSADO (AJUSTADO PARA POSTGRESQL/NEON)
         d_inicio_filtro = datetime.strptime(data_ini, '%Y-%m-%d')
         
-        # Query que busca o mês anterior ao mês da data_ini
+        # Usamos EXTRACT e INTERVAL para buscar o mês anterior à data selecionada
         query_passado = """SELECT COALESCE(SUM(volume_estimado), 0) as vol_passado, COUNT(*) as total_passado 
                            FROM emissoes 
-                           WHERE MONTH(data_inicial) = MONTH(DATE_SUB(%s, INTERVAL 1 MONTH))
-                           AND YEAR(data_inicial) = YEAR(DATE_SUB(%s, INTERVAL 1 MONTH))"""
+                           WHERE EXTRACT(MONTH FROM data_inicial) = EXTRACT(MONTH FROM (%s::date - INTERVAL '1 month'))
+                           AND EXTRACT(YEAR FROM data_inicial) = EXTRACT(YEAR FROM (%s::date - INTERVAL '1 month'))"""
         
-        # Corrigido: Passando apenas as duas datas necessárias para o SQL
         cursor.execute(query_passado, (data_ini, data_ini))
         resumo_passado = cursor.fetchone()
         
@@ -287,5 +286,6 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
 
     app.run(host='0.0.0.0', port=port)
+
 
 
