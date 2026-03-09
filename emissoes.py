@@ -28,7 +28,7 @@ def limpar_numero(val):
 # Rota para a Página Inicial (Dashboard)
 @app.route('/')
 def index():
-    return render_template('index.html') 
+    return render_template('dashboard.html') 
 
 # Rota para a Página de Cadastro
 @app.route('/cadastro.html')
@@ -286,3 +286,4 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
 
     app.run(host='0.0.0.0', port=port)
+
