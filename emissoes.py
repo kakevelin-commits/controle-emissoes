@@ -123,8 +123,7 @@ def get_dashboard_data():
         vol_dashboard = float(resumo['total_vol'])
         eventos_dashboard = resumo['total_eventos']
 
-        # 2. Resumo para Variação (MODIFICADO PARA SER DINÂMICO)
-        # Se você selecionou uma data no filtro, usamos ela como referência. Se não, usamos hoje.
+        # 2. Resumo para Variação (AJUSTADO PARA POSTGRESQL/NEON)
         if data_ini:
             data_referencia = datetime.strptime(data_ini, '%Y-%m-%d')
         else:
@@ -133,17 +132,18 @@ def get_dashboard_data():
         mes_alvo = data_referencia.month
         ano_alvo = data_referencia.year
 
-        # Dados do Mês Alvo (Selecionado ou Atual)
+        # Dados do Mês Alvo (EXTRACT substitui MONTH/YEAR)
         cursor.execute(f"""SELECT COALESCE(SUM(volume_estimado), 0) as v, COUNT(*) as c 
                           FROM emissoes 
-                          WHERE MONTH(data_inicial) = %s AND YEAR(data_inicial) = %s""", (mes_alvo, ano_alvo))
+                          WHERE EXTRACT(MONTH FROM data_inicial) = %s 
+                          AND EXTRACT(YEAR FROM data_inicial) = %s""", (mes_alvo, ano_alvo))
         atual_data = cursor.fetchone()
         
-        # Dados do Mês Anterior à referência
+        # Dados do Mês Anterior (INTERVAL substitui DATE_SUB)
         cursor.execute(f"""SELECT COALESCE(SUM(volume_estimado), 0) as v, COUNT(*) as c 
                           FROM emissoes 
-                          WHERE MONTH(data_inicial) = MONTH(DATE_SUB(%s, INTERVAL 1 MONTH)) 
-                          AND YEAR(data_inicial) = YEAR(DATE_SUB(%s, INTERVAL 1 MONTH))""", (data_referencia, data_referencia))
+                          WHERE EXTRACT(MONTH FROM data_inicial) = EXTRACT(MONTH FROM (%s::date - INTERVAL '1 month')) 
+                          AND EXTRACT(YEAR FROM data_inicial) = EXTRACT(YEAR FROM (%s::date - INTERVAL '1 month'))""", (data_referencia, data_referencia))
         passado_data = cursor.fetchone()
 
         vol_m_atual = float(atual_data['v'])
@@ -159,7 +159,8 @@ def get_dashboard_data():
         cursor.execute(f"SELECT TO_CHAR(data_inicial, 'DD/MM/YYYY') as data, unidade, turno, cadastrante, volume_estimado FROM emissoes WHERE {where_sql_kpi} ORDER BY id DESC LIMIT 5", params_kpi)
         ultimas = cursor.fetchall()
 
-        cursor.execute(f"SELECT MONTH(data_inicial) as mes, SUM(volume_estimado) as vol FROM emissoes WHERE YEAR(data_inicial) = 2026 GROUP BY mes ORDER BY mes")
+        # Substitua a linha do gráfico por esta:
+        cursor.execute(f"SELECT EXTRACT(MONTH FROM data_inicial) as mes, SUM(volume_estimado) as vol FROM emissoes WHERE EXTRACT(YEAR FROM data_inicial) = 2026 GROUP BY mes ORDER BY mes")
         dados_grafico = cursor.fetchall()
 
         cursor.close()
@@ -286,4 +287,5 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
 
     app.run(host='0.0.0.0', port=port)
+
 
