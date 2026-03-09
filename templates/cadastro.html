@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gasmar - Emissões Fugitivas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .bg-gasmar-1 { background-color: #17375F; } 
+        .bg-gasmar-2 { background-color: #36A9E0; } 
+        .bg-gasmar-3 { background-color: #53792B; } 
+        .bg-gasmar-4 { background-color: #A2C516; } 
+        .text-gasmar-1 { color: #17375F; }
+        .gasmar-gradient {
+            background: linear-gradient(to right, #17375F, #36A9E0, #53792B, #A2C516);
+        }
+        .transition-custom { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="p-4 md:p-10 text-slate-700">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-end mb-4 px-2">
+            <div class="flex flex-col gap-2">
+                <img src="{{ url_for('static', filename='logo_gasmar.png') }}" 
+                    alt="Gasmar Gás Natural" 
+                    class="w-40 h-auto object-contain transition-all hover:opacity-90 cursor-pointer"
+                    onclick="window.location.href='/'">
+                
+                <div class="h-[4px] w-full max-w-[320px] gasmar-gradient rounded-full shadow-sm"></div>
+            </div>
+            
+            <div class="text-right">
+                <h1 class="text-3xl font-black text-[#17375F] tracking-tighter leading-none uppercase">Emissões Fugitivas</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Controle de Emissões</p>
+            </div>
+        </header>
+
+        <div class="mb-4">
+            <button onclick="window.location.href='/'" class="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-gasmar-1 transition-custom shadow-sm bg-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2.5"/></svg>
+                Voltar para o Início
+            </button>
+        </div>
+
+        <form id="fugitivasForm" method="POST" action="/api/cadastrar" class="flex flex-col lg:flex-row gap-6">
+            <input type="hidden" name="turno" id="input_turno">
+            <input type="hidden" name="unidade" id="input_unidade">
+            <input type="hidden" name="estado_gas" id="input_estado_gas" value="GN">
+            <input type="hidden" name="volume_estimado" id="input_volume_estimado">
+            <input type="hidden" name="classificacao_evento" id="input_classificacao">
+            <input type="hidden" name="pressao_final" id="input_pressao_final">
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 flex-grow space-y-8">
+                
+                <div class="border-b border-slate-100 pb-6">
+                    <div class="flex items-center gap-2 text-[#17375F] font-bold text-[11px] uppercase tracking-wider mb-4">
+                        <div class="p-1.5 bg-[#f0f9f6] rounded-lg">
+                            <svg class="w-4 h-4 text-[#53792B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-width="2.5"/></svg>
+                        </div>
+                        Identificação do Registro
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-grow">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Cadastrante</label>
+                            <input type="text" name="cadastrante" placeholder="Digite seu nome completo" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none transition-all">
+                        </div>
+                        
+                        <div class="w-full md:w-64 relative">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Turno</label>
+                            <div onclick="toggleDropdown('shiftMenu', 'shiftArrow')" id="shiftButton" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center cursor-pointer hover:border-[#36A9E0] transition-custom">
+                                <span id="selectedShift" class="text-slate-500">Selecione o turno</span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform duration-300" id="shiftArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"/></svg>
+                            </div>
+
+                            <div id="shiftMenu" class="hidden absolute z-30 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                                <div class="bg-gasmar-1 text-white p-3 text-xs font-bold uppercase tracking-tight">Turnos Disponíveis</div>
+                                <div class="p-1">
+                                    <div onclick="selectValue('selectedShift', 'Diurno', 'shiftMenu', 'shiftArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm">
+                                        <div class="w-4 h-4 border-2 border-slate-300 rounded-full"></div> <span>Diurno</span>
+                                    </div>
+                                    <div onclick="selectValue('selectedShift', 'Noturno', 'shiftMenu', 'shiftArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm">
+                                        <div class="w-4 h-4 border-2 border-slate-300 rounded-full"></div> <span>Noturno</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-12">
+                    <div class="flex-1 space-y-5">
+                        <div class="flex items-center gap-2 text-[#17375F] font-bold text-[11px] uppercase tracking-wider mb-2">
+                            <div class="p-1.5 bg-[#f0f4f9] rounded-lg">
+                                <svg class="w-4 h-4 text-[#17375F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2.5"/></svg>
+                            </div>
+                            Dados da Fonte
+                        </div>
+
+                        <div class="relative dropdown-container">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Unidade</label>
+                            <div onclick="toggleDropdown('unitMenu', 'unitArrow')" id="unitButton" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center cursor-pointer hover:border-[#36A9E0] transition-custom shadow-sm">
+                                <span id="selectedUnit" class="text-slate-500 text-sm">Selecione a unidade</span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform duration-300" id="unitArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"/></svg>
+                            </div>
+
+                            <div id="unitMenu" class="hidden absolute z-30 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                                <div class="bg-gasmar-1 text-white p-3 text-[10px] font-bold uppercase tracking-tight">Unidades Disponíveis</div>
+                                <div class="p-1">
+                                    <div onclick="selectValue('selectedUnit', 'SDGN1', 'unitMenu', 'unitArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm">
+                                        <div class="w-4 h-4 border-2 border-slate-300 rounded-full"></div> <span>SDGN1</span>
+                                    </div>
+                                    <div onclick="selectValue('selectedUnit', 'SDGN2', 'unitMenu', 'unitArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm">
+                                        <div class="w-4 h-4 border-2 border-slate-300 rounded-full"></div> <span>SDGN2</span>
+                                    </div>
+                                    <div onclick="selectValue('selectedUnit', 'SDGN3', 'unitMenu', 'unitArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm">
+                                        <div class="w-4 h-4 border-2 border-slate-300 rounded-full"></div> <span>SDGN3</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Estado do Gás Natural</label>
+                            <div class="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden p-1 w-full max-w-xs shadow-sm">
+                                <button type="button" id="btn-gn" onclick="selectGas('GN')" class="flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom bg-gasmar-1 text-white shadow-sm">
+                                    GN
+                                </button>
+                                <button type="button" id="btn-gnl" onclick="selectGas('GNL')" class="flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom text-slate-400 hover:text-gasmar-1">
+                                    GNL
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 pt-2">
+                            <div>
+                                <label class="text-sm font-semibold mb-1 text-slate-600">Diâmetro Interno (mm)</label>
+                                <input type="text" name="diametro" placeholder="0,00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="text-sm font-semibold mb-1 text-slate-600">% de abertura do orifício</label>
+                                <input type="text" name="abertura" placeholder="0 - 100" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[11px] font-bold mb-1 text-slate-500 uppercase">P. Inicial (barg)</label>
+                                    <input type="text" name="pressao" placeholder="0,00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="text-[11px] font-bold mb-1 text-slate-500 uppercase">P. Final (barg)</label>
+                                    <input type="text" name="pressao_final_input" placeholder="0,00" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 space-y-5">
+                        <div class="flex items-center gap-2 text-[#17375F] font-bold text-[11px] uppercase tracking-wider mb-2">
+                            <div class="p-1.5 bg-[#f0f9f6] rounded-lg">
+                                <svg class="w-4 h-4 text-[#53792B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2.5"/></svg>
+                            </div>
+                            Período
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-600">Data Inicial</label>
+                                <input type="date" name="data_ini" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 outline-none focus:border-[#36A9E0] shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-600">Horário Inicial</label>
+                                <input type="time" name="hora_ini" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 outline-none shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-600">Data Final</label>
+                                <input type="date" name="data_fim" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 outline-none focus:border-[#36A9E0] shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1 text-slate-600">Horário Final</label>
+                                <input type="time" name="hora_fim" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 outline-none shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-slate-100 mt-4">
+                    <div class="flex items-center gap-2 text-[#17375F] font-bold text-[11px] uppercase tracking-wider mb-6">
+                        <div class="p-1.5 bg-[#fefce8] rounded-lg">
+                            <svg class="w-4 h-4 text-[#ca8a04]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2.5"/></svg>
+                        </div>
+                        Detalhamento da Ocorrência
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Local do Evento</label>
+                            <input type="text" name="local_evento" required placeholder="Ex: Estação de Medição X" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Equipamento/Fonte</label>
+                            <input type="text" name="equipamento_fonte" required placeholder="Ex: Válvula de Bloqueio" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Descrição do Evento</label>
+                            <textarea name="descricao_evento" required rows="2" placeholder="Descreva o ocorrido detalhadamente..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm"></textarea>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Causa Provável</label>
+                            <input type="text" name="causa_provavel" required placeholder="Ex: Desgaste de vedação" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Ação Corretiva</label>
+                            <input type="text" name="acao_corretiva" required placeholder="Ex: Substituição da peça" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                        </div>
+                        
+                        <div class="relative dropdown-container md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Classificação do Evento</label>
+                            <div onclick="toggleDropdown('classMenu', 'classArrow')" id="classButton" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center cursor-pointer hover:border-[#36A9E0] transition-custom shadow-sm">
+                                <span id="selectedClass" class="text-slate-500 text-sm">Selecione a gravidade</span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform duration-300" id="classArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-width="2"/></svg>
+                            </div>
+                            <div id="classMenu" class="hidden absolute z-30 mt-2 w-full bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                                <div class="bg-gasmar-1 text-white p-3 text-[10px] font-bold uppercase tracking-tight">Níveis de Gravidade</div>
+                                <div class="p-1">
+                                    <div onclick="selectValue('selectedClass', 'Leve', 'classMenu', 'classArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm text-slate-700">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full"></div> <span>Leve</span>
+                                    </div>
+                                    <div onclick="selectValue('selectedClass', 'Moderada', 'classMenu', 'classArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm text-slate-700">
+                                        <div class="w-3 h-3 bg-yellow-500 rounded-full"></div> <span>Moderada</span>
+                                    </div>
+                                    <div onclick="selectValue('selectedClass', 'Grave', 'classMenu', 'classArrow')" class="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3 rounded-lg transition text-sm text-red-600 font-bold">
+                                        <div class="w-3 h-3 bg-red-600 rounded-full"></div> <span>Grave</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-1">
+                            <label class="block text-sm font-semibold mb-1 text-slate-600">Observações (Opcional)</label>
+                            <input type="text" name="observacoes" placeholder="Notas adicionais..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36A9E0] outline-none shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:w-72 flex flex-col gap-4">
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="h-1.5 w-full gasmar-gradient"></div>
+                    <div class="p-8 text-center">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="h-6 w-6 text-[#36A9E0]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" stroke-width="2"/></svg>
+                        </div>
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Resultado Estimado</h3>
+                        <p class="text-xs font-bold text-slate-600 mb-6 uppercase">Volume (Média P)</p>
+                        <div class="py-4 border-t border-slate-50">
+                            <span id="resultadoFinal" class="text-4xl font-bold text-slate-200 tracking-tighter transition-all">--</span>
+                            <p class="text-slate-300 text-xs font-bold mt-1 uppercase">m³</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" onclick="calcular()" class="bg-gasmar-1 hover:bg-[#1a4170] text-white w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95">
+                    Calcular
+                </button>
+
+                <button type="submit" class="bg-gasmar-3 hover:bg-[#436122] text-white w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-md active:scale-95">
+                    Cadastrar
+                </button>
+            </div>
+        </form>
+
+        <footer class="mt-12 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            Gasmar Gas Natural — Sistema de Monitoramento de Emissões Fugitivas © 2026
+        </footer>
+    </div>
+
+    <script>
+        function toggleDropdown(menuId, arrowId) {
+            const menu = document.getElementById(menuId);
+            const arrow = document.getElementById(arrowId);
+            document.querySelectorAll('[id$="Menu"]').forEach(m => { if(m.id !== menuId) m.classList.add('hidden') });
+            menu.classList.toggle('hidden');
+            if(arrow) arrow.classList.toggle('rotate-180');
+        }
+
+        function selectValue(labelId, value, menuId, arrowId) {
+            const label = document.getElementById(labelId);
+            label.innerText = value;
+            label.classList.replace('text-slate-500', 'text-slate-700'); 
+
+            if (labelId === 'selectedShift') document.getElementById('input_turno').value = value;
+            if (labelId === 'selectedUnit') document.getElementById('input_unidade').value = value;
+            if (labelId === 'selectedClass') document.getElementById('input_classificacao').value = value;
+
+            document.getElementById(menuId).classList.add('hidden');
+            if(arrowId) document.getElementById(arrowId).classList.remove('rotate-180');
+        }
+
+        function selectGas(type) {
+            document.getElementById('input_estado_gas').value = type;
+            const btnGN = document.getElementById('btn-gn');
+            const btnGNL = document.getElementById('btn-gnl');
+            if (type === 'GN') {
+                btnGN.className = 'flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom bg-gasmar-1 text-white shadow-sm';
+                btnGNL.className = 'flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom text-slate-400 hover:text-gasmar-1';
+            } else {
+                btnGNL.className = 'flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom bg-gasmar-1 text-white shadow-sm';
+                btnGN.className = 'flex-1 py-2 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-custom text-slate-400 hover:text-gasmar-1';
+            }
+        }
+
+        function parsePTBR(valor) {
+            if (!valor) return 0;
+            // Remove pontos de milhar e troca a vírgula decimal por ponto
+            // Ex: "1.250,50" -> "1250.50"
+            let limpo = valor.toString().replace(/\./g, '').replace(',', '.');
+            return parseFloat(limpo);
+        }
+
+        function calcular() {
+            // 1. Captura os valores dos inputs e converte para número
+            // Usamos variáveis locais (const) para não alterar o que está na tela
+            const diamRaw = document.getElementsByName('diametro')[0].value;
+            const pIniRaw = document.getElementsByName('pressao')[0].value;
+            const pFimRaw = document.getElementsByName('pressao_final_input')[0].value;
+            
+            const diam_mm = parsePTBR(diamRaw);
+            const p_ini = parsePTBR(pIniRaw);
+            const p_fim = parsePTBR(pFimRaw);
+            const tipoGas = document.getElementById('input_estado_gas').value; 
+
+            // 2. Validação de Período
+            const d1 = document.querySelector('input[name="data_ini"]').value;
+            const h1 = document.querySelector('input[name="hora_ini"]').value;
+            const d2 = document.querySelector('input[name="data_fim"]').value;
+            const h2 = document.querySelector('input[name="hora_fim"]').value;
+
+            if (!d1 || !h1 || !d2 || !h2) {
+                alert("Preencha o período completo.");
+                return;
+            }
+
+            const tempo_segundos = (new Date(`${d2}T${h2}`) - new Date(`${d1}T${h1}`)) / 1000;
+            if (tempo_segundos <= 0) {
+                alert("O horário final deve ser maior que o inicial.");
+                return;
+            }
+
+            // 3. LÓGICA DE CÁLCULO ORIGINAL
+            const Cd = 0.61;
+            let rho = (tipoGas === 'GNL') ? 450 : 10.4054;
+            let fatorExpansao = (tipoGas === 'GNL') ? 600 : 1;
+
+            const D_metros = diam_mm / 1000;
+            const area = (Math.PI * Math.pow(D_metros, 2)) / 4;
+            
+            // Pressão absoluta para a fórmula (mantendo sua lógica de P_ini - 1)
+            const pressao_pa = (p_ini - 1) * 100000; 
+
+            const velocidade = Math.sqrt((2 * pressao_pa) / rho);
+            const volumeFinal = (Cd * area * velocidade * tempo_segundos) * fatorExpansao;
+
+            // 4. EXIBIÇÃO APENAS NO CARD DE RESULTADO
+            const resDisplay = document.getElementById('resultadoFinal');
+            resDisplay.innerText = volumeFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            resDisplay.classList.replace('text-slate-200', 'text-[#17375F]');
+            
+            // 5. ATUALIZA APENAS OS CAMPOS OCULTOS (HIDDEN) QUE VÃO PARA O BANCO
+            // Isso garante que o valor original na tela não mude
+            document.getElementById('input_volume_estimado').value = volumeFinal.toFixed(3);
+            document.getElementById('input_pressao_final').value = p_fim.toFixed(3);
+
+            // IMPORTANTE: Removi as linhas que faziam document.getElementsByName(...).value = ...
+            // Assim, o que você digitou (ex: 27.000 ou 14.4) permanece igual na tela.
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gasmar - Relatório Consolidado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; padding-bottom: 50px; }
+        
+        #relatorioConteudo {
+            width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+
+        .page {
+            padding: 15mm;
+            min-height: auto; /* Deixa o conteúdo fluir */
+        }
+
+        /* Classe para os cards das unidades (NÃO permite corte) */
+        .bloco-inteiro {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: block;
+            width: 100%;
+        }
+
+        /* Classe para as tabelas (PERMITE corte entre páginas) */
+        .tabela-longa {
+            page-break-inside: auto !important;
+            break-inside: auto !important;
+            width: 100%;
+        }
+
+        /* Evita que uma linha da tabela seja cortada ao meio */
+        .tabela-longa tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .gasmar-gradient { background: linear-gradient(90deg, #17375F, #36A9E0, #53792B, #A2C516); }
+
+        @media print {
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+            .page { margin: 0; box-shadow: none; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 z-50 shadow-sm">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex flex-col">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1">Período de Referência</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="date" id="data_ini" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-[#17375F] outline-none focus:ring-2 focus:ring-[#36A9E0]">
+                        <span class="text-slate-400 text-xs font-bold">até</span>
+                        <input type="date" id="data_fim" class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-bold text-[#17375F] outline-none focus:ring-2 focus:ring-[#36A9E0]">
+                        
+                        <button onclick="atualizarDadosRelatorio()" class="bg-[#36A9E0] text-white px-4 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-[#2a87b3] transition-all">
+                            Atualizar Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="baixarPDF()" class="bg-[#17375F] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2.5"/></svg>
+                    BAIXAR PDF
+                </button>
+                <a href="/" class="bg-white text-slate-600 px-6 py-2.5 rounded-xl font-bold text-xs shadow-md border border-slate-200 flex items-center uppercase">Sair</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="relatorioConteudo">
+        <div class="page" id="folha1">
+            <header class="flex justify-between items-center mb-6">
+                <div class="flex flex-col gap-1">
+                    <img src="{{ url_for('static', filename='logo_gasmar.png') }}" alt="Gasmar" class="w-40 h-auto object-contain">
+                </div>
+                <div class="text-right">
+                    <h1 class="text-2xl font-black text-[#17375F] tracking-tighter leading-none uppercase">Emissões Fugitivas</h1>
+                    <p id="tituloTipoRelatorio" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-2">Relatório</p>
+                    <p id="labelMesRef" class="text-[10px] font-bold text-[#36A9E0] uppercase tracking-widest mt-1">--</p>
+                </div>
+            </header>
+
+            <div class="h-1 w-full gasmar-gradient mb-8 rounded-full"></div>
+
+            <section class="mb-10">
+                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">01. Indicadores de Performance Operacional</h2>
+                <div class="grid grid-cols-4 gap-4">
+                    <div class="p-5 bg-[#17375F] rounded-2xl shadow-md border border-[#17375F]">
+                        <p class="text-[9px] font-bold text-white/60 uppercase mb-1">Volume Total Emitido</p>
+                        <h3 id="volTotalCard" class="text-xl font-black text-white leading-tight whitespace-nowrap">--</h3>
+                    </div>
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-1">Total de Eventos</p>
+                        <h3 id="eventosTotalCard" class="text-2xl font-black text-[#17375F]">--</h3>
+                    </div>
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-1 text-blue-600">Redução Volume (%)</p>
+                        <h3 id="varVolCard" class="text-2xl font-black">--</h3>
+                    </div>
+                    <div class="p-5 bg-white rounded-2xl border border-slate-200">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase mb-1 text-blue-600">Redução Eventos (%)</p>
+                        <h3 id="varFreqCard" class="text-2xl font-black">--</h3>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-10">
+                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                    <div class="h-80 w-full"> <canvas id="chartComparativo"></canvas> </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">02. Detalhamento por Unidade</h2>
+                <div id="detalhesUnidadesContainer" class="space-y-4">
+                </div>
+            </section>
+
+            <section class="mt-10">
+                <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">03. Eventos Detalhados</h2>
+                <div id="containerTabelasPorUnidade" class="space-y-8"></div>
+            </section>
+
+            <footer class="mt-12 pt-4 border-t border-slate-100 text-[8px] text-slate-300 font-bold uppercase tracking-widest flex justify-between">
+                <span>Gasmar</span>
+                <span id="timestampGeracao" class="text-[#36A9E0]"></span>
+                <span>Página 01 / 01</span>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let chartConsolidado;
+
+        async function atualizarDadosRelatorio() {
+            const dataIni = document.getElementById('data_ini').value;
+            const dataFim = document.getElementById('data_fim').value;
+
+            if (!dataIni || !dataFim) {
+                alert("Selecione o período.");
+                return;
+            }
+
+            // --- INÍCIO DA NOVA LÓGICA DE CABEÇALHO (Adicionada) ---
+            const dIniObj = new Date(dataIni + 'T00:00:00');
+            const dFimObj = new Date(dataFim + 'T00:00:00');
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+
+            // 1. Lógica Parcial vs Consolidado
+            const labelTipo = document.getElementById('tituloTipoRelatorio');
+            if (dFimObj >= hoje) {
+                labelTipo.innerText = "Relatório Parcial";
+            } else {
+                labelTipo.innerText = "Relatório Consolidado";
+            }
+
+            // 2. Lógica do Nome do Mês vs Datas Expressas
+            const primeiroDiaMes = new Date(dIniObj.getFullYear(), dIniObj.getMonth(), 1);
+            const ultimoDiaMes = new Date(dIniObj.getFullYear(), dIniObj.getMonth() + 1, 0);
+            
+            const ehMesCheio = dIniObj.getTime() === primeiroDiaMes.getTime() && 
+                            dFimObj.getTime() === ultimoDiaMes.getTime();
+
+            const labelPeriodo = document.getElementById('labelMesRef');
+            if (ehMesCheio) {
+                const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", 
+                            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+                labelPeriodo.innerText = `${meses[dIniObj.getMonth()]} / ${dIniObj.getFullYear()}`;
+            } else {
+                const formatarDataBR = (data) => data.toLocaleDateString('pt-BR');
+                labelPeriodo.innerText = `${formatarDataBR(dIniObj)} até ${formatarDataBR(dFimObj)}`;
+            }
+            // --- FIM DA NOVA LÓGICA DE CABEÇALHO ---
+
+            try {
+                const response = await fetch(`/api/relatorio_consolidado?data_ini=${dataIni}&data_fim=${dataFim}`);
+                const dados = await response.json();
+
+                // 1. Totais
+                document.getElementById('volTotalCard').innerHTML = `${dados.vol_total.toLocaleString('pt-BR', {minimumFractionDigits: 2})} <span class="text-xs">m³</span>`;
+                document.getElementById('eventosTotalCard').innerText = dados.total_eventos;
+
+                // 2. Evolução (Cores)
+                const formatarEvolucao = (id, valor) => {
+                    const elem = document.getElementById(id);
+                    if (!elem) return;
+                    
+                    const label = elem.previousElementSibling;
+                    const ehVolume = id === 'varVolCard';
+
+                    if (label) {
+                        label.style.color = "#94a3b8";
+                    }
+
+                    if (valor < 0) {
+                        elem.innerText = `${Math.abs(valor)}%`;
+                        elem.style.color = "#DC2626";
+                        if (label) {
+                            label.innerText = ehVolume ? "Aumento Volume (%)" : "Aumento Eventos (%)";
+                        }
+                    } else if (valor > 0) {
+                        elem.innerText = `${valor}%`;
+                        elem.style.color = "#53792B";
+                        if (label) {
+                            label.innerText = ehVolume ? "Redução Volume (%)" : "Redução Eventos (%)";
+                        }
+                    } else {
+                        elem.innerText = "0%";
+                        elem.style.color = "#94a3b8";
+                        if (label) {
+                            label.innerText = ehVolume ? "Redução Volume (%)" : "Redução Eventos (%)";
+                        }
+                    }
+                };
+                formatarEvolucao('varVolCard', dados.var_vol);
+                formatarEvolucao('varFreqCard', dados.var_freq);
+
+                if (typeof atualizarGraficoComparativo === 'function') atualizarGraficoComparativo(dados.volumes_unidades);
+
+                // 3. Detalhamento por Unidade
+                const container = document.getElementById('detalhesUnidadesContainer');
+                container.innerHTML = ''; 
+
+                Object.keys(dados.detalhes_unidades).forEach(unid => {
+                    const info = dados.detalhes_unidades[unid];
+                    container.innerHTML += `
+                        <div class="bloco-inteiro">
+                            <div class="bg-white p-5 border-l-4 ${info.total_eventos > 0 ? 'border-[#17375F]' : 'border-slate-200'} rounded-r-xl shadow-sm border border-slate-100 mb-4">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 class="font-black text-sm uppercase leading-none">${unid}</h4>
+                                        <p class="text-[9px] font-bold text-slate-400 uppercase mt-1">${info.total_eventos} Eventos Registrados</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-black text-sm text-[#17375F]">${info.volume.toLocaleString('pt-BR', {minimumFractionDigits: 2})} m³</p>
+                                    </div>
+                                </div>
+                                <div class="relative flex py-3 items-center">
+                                    <div class="flex-grow border-t border-slate-200"></div>
+                                    <span class="flex-shrink mx-4 text-[7px] font-bold text-slate-400 uppercase tracking-widest">Dados de eventos mais frequentes</span>
+                                    <div class="flex-grow border-t border-slate-200"></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 pt-1">
+                                    <div>
+                                        <p class="text-[8px] font-bold text-slate-400 uppercase">Local Principal</p>
+                                        <p class="text-[10px] font-bold text-slate-700">${info.local_comum}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[8px] font-bold text-slate-400 uppercase">Fonte Principal</p>
+                                        <p class="text-[10px] font-bold text-slate-700">${info.fonte_comum}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[8px] font-bold text-slate-400 uppercase">Causa Principal</p>
+                                        <p class="text-[10px] font-bold text-slate-700">${info.causa_comum}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+
+                // 4. Seção 03 (TABELAS)
+                const containerGeral = document.getElementById('containerTabelasPorUnidade');
+                containerGeral.innerHTML = ''; 
+
+                const agrupados = {};
+                dados.lista_eventos.forEach(ev => {
+                    if (!agrupados[ev.unidade]) agrupados[ev.unidade] = [];
+                    agrupados[ev.unidade].push(ev);
+                });
+
+                ['SDGN1', 'SDGN2', 'SDGN3'].forEach(unid => {
+                    const eventosDaUnidade = agrupados[unid] || [];
+                    if (eventosDaUnidade.length > 0) {
+                        let htmlTabela = `
+                            <div class="tabela-longa mb-10">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="h-4 w-1 bg-[#17375F] rounded-full"></div>
+                                    <h3 class="text-[11px] font-black text-[#17375F] uppercase">Detalhamento de Eventos: ${unid}</h3>
+                                </div>
+                                <div class="overflow-hidden border border-slate-200 rounded-2xl shadow-sm">
+                                    <table class="w-full text-left border-collapse bg-white">
+                                        <thead class="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th class="p-4 text-[10px] font-black text-[#17375F] uppercase">Data/Hora</th>
+                                                <th class="p-4 text-[10px] font-black text-[#17375F] uppercase">Fonte / Local</th>
+                                                <th class="p-4 text-[10px] font-black text-[#17375F] uppercase text-right">Vol (m³)</th>
+                                                <th class="p-4 text-[10px] font-black text-[#17375F] uppercase">Ação Corretiva</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="text-[11px] text-slate-700">`;
+
+                        eventosDaUnidade.forEach(ev => {
+                            htmlTabela += `
+                                <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                    <td class="p-4"><b>${ev.data}</b><br><span class="text-[9px] text-slate-400">${ev.hora}</span></td>
+                                    <td class="p-4">
+                                        <div class="font-bold uppercase">${ev.equipamento_fonte}</div>
+                                        <div class="text-[9px] text-[#36A9E0] font-bold italic">Local: ${ev.local_evento || 'N/I'}</div>
+                                    </td>
+                                    <td class="p-4 text-right font-black text-[#17375F]">${ev.volume_estimado.toLocaleString('pt-BR', {minimumFractionDigits: 3})}</td>
+                                    <td class="p-4 italic text-slate-500 text-[10px] bg-slate-50/30">${ev.acao_corretiva || 'N/A'}</td>
+                                </tr>`;
+                        });
+
+                        htmlTabela += `</tbody></table></div></div>`;
+                        containerGeral.innerHTML += htmlTabela;
+                    }
+                });
+
+                // --- INSERÇÃO DA DATA E HORA DE GERAÇÃO NO FINAL ---
+                const agora = new Date();
+                const dataFormatada = agora.toLocaleDateString('pt-BR');
+                const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                
+                const elemTimestamp = document.getElementById('timestampGeracao');
+                if (elemTimestamp) {
+                    elemTimestamp.innerText = `Gerado em: ${dataFormatada} às ${horaFormatada}`;
+                }
+
+            } catch (e) { 
+                console.error(e); 
+            }
+        }
+
+        function atualizarGraficoComparativo(volumesUnidades) {
+            const ctx = document.getElementById('chartComparativo').getContext('2d');
+            if (chartConsolidado) chartConsolidado.destroy();
+
+            const labels = ['SDGN1', 'SDGN2', 'SDGN3'];
+            const valores = labels.map(l => volumesUnidades[l] || 0);
+
+            chartConsolidado = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Volume (m³)',
+                        data: valores,
+                        backgroundColor: ['#17375F', '#36A9E0', '#53792B'],
+                        borderRadius: 10,
+                        barThickness: 40
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: {
+                            anchor: 'end', align: 'top',
+                            formatter: (val) => val.toLocaleString('pt-BR', {minimumFractionDigits: 2}),
+                            font: { weight: 'bold', size: 10 }, color: '#17375F', offset: 4
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, grid: { color: '#f1f5f9' },
+                            ticks: { display: true, font: { size: 10, weight: 'bold' }, color: '#94a3b8' },
+                            title: { display: true, text: 'Volume (m³)', color: '#64748b', font: { size: 11, weight: 'bold', family: 'Inter' } }
+                        },
+                        x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }
+                    },
+                    layout: { padding: { top: 25, left: 10 } }
+                }
+            });
+        }
+
+        function baixarPDF() {
+            // --- ATUALIZAÇÃO DO HORÁRIO NO MOMENTO DO DOWNLOAD ---
+            const agora = new Date();
+            const dataFormatada = agora.toLocaleDateString('pt-BR');
+            const horaFormatada = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            const elemTimestamp = document.getElementById('timestampGeracao');
+            if (elemTimestamp) {
+                elemTimestamp.innerText = `Gerado em: ${dataFormatada} às ${horaFormatada}`;
+            }
+            // --- FIM DA ATUALIZAÇÃO ---
+
+            const element = document.getElementById('relatorioConteudo');
+            const dIni = document.getElementById('data_ini').value || 'Relatorio';
+            
+            const opt = {
+                margin: [10, 0, 10, 0], // Margem superior/inferior no PDF - MANTIDO
+                filename: `Relatorio_Gasmar_${dIni}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: 'css' } // Respeita bloco-inteiro e tabela-longa - MANTIDO
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        window.onload = () => {
+            const ctx = document.getElementById('chartComparativo').getContext('2d');
+            chartConsolidado = new Chart(ctx, { type: 'bar', data: { labels: ['SDGN1', 'SDGN2', 'SDGN3'], datasets: [{ data: [0,0,0] }] } });
+        };
+    </script>
+</body>
+</html>
